@@ -3,7 +3,9 @@
 #include<stdarg.h>
 #include <CL/cl.h>
 #include <vector>
-
+#include <iostream>
+#include <string>
+#include <fstream>
 const char* TranslateOpenCLError(cl_int errorCode)
 {
     switch (errorCode)
@@ -74,35 +76,7 @@ const char* TranslateOpenCLError(cl_int errorCode)
         return "UNKNOWN ERROR CODE";
     }
 }
-int ReadSourceFromFile(const char* fileName, char** source, size_t* sourceSize)
-{
-    int errorCode = CL_SUCCESS;
 
-    FILE* fp = NULL;
-    //OpenCL kernel saved as string
-    fopen_s(&fp, fileName, "rb");
-    if (fp == NULL)
-    {
-        fprintf(stderr,"Error: Couldn't find program source file '%s'.\n", fileName);
-        errorCode = CL_INVALID_VALUE;
-    }
-    else {
-        fseek(fp, 0, SEEK_END);
-        *sourceSize = ftell(fp);
-        fseek(fp, 0, SEEK_SET);
-
-        *source = new char[*sourceSize];
-        if (*source == NULL)
-        {
-            fprintf(stderr,"Couldn't allocate %d bytes for program source from file ' % s'.\n", *sourceSize, fileName);
-            errorCode = CL_OUT_OF_HOST_MEMORY;
-        }
-        else {
-            fread(*source, 1, *sourceSize, fp);
-        }
-    }
-    return errorCode;
-}
 void LogInfo(const char* str, ...)
 {
     if (str)
@@ -134,9 +108,15 @@ int main()
     cl_int err = CL_SUCCESS;
 
     //read OpenCL Kernel
-    char* source = NULL;
     size_t src_size = 0;
-    err = ReadSourceFromFile("kernel.cl", &source, &src_size);
+    std::fstream kernelFile("kernel.cl");
+    std::string content(
+        (std::istreambuf_iterator<char>(kernelFile)),
+        std::istreambuf_iterator<char>()
+    );
+    const char* kernelCharArray = new char[content.size()];
+    kernelCharArray = content.c_str();
+    
     if (CL_SUCCESS != err)
     {
         fprintf(stderr, "Error: ReadSourceFromFile returned %s.\n", TranslateOpenCLError(err));
@@ -207,7 +187,7 @@ int main()
     err = clEnqueueWriteBuffer(cmdQueue, bufB, CL_FALSE, 0, datasize, B, 0, NULL, NULL);
     
     //create program
-    cl_program program = clCreateProgramWithSource(context, 1, (const char**)&source, NULL, &err);
+    cl_program program = clCreateProgramWithSource(context, 1, (const char**)&kernelCharArray, NULL, &err);
     
     //compile program for device
     err = clBuildProgram(program, 1, devices, "", NULL, NULL);
