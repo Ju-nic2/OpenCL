@@ -6,6 +6,7 @@
 #include <iostream>
 #include <string>
 #include <fstream>
+#include <Windows.h>
 const char* TranslateOpenCLError(cl_int errorCode)
 {
     switch (errorCode)
@@ -104,16 +105,21 @@ void LogError(const char* str, ...)
 }
 int main()
 {
+
+    LARGE_INTEGER beginClock, endClock, clockFreq;
+    LARGE_INTEGER tot_beginClock, tot_endClock, tot_clockFreq;
+
+    QueryPerformanceFrequency(&tot_clockFreq);
     //for status check
     cl_int err = CL_SUCCESS;
 
     //read OpenCL Kernel
+        
+    //**fix program build Error ** 
+    //remove ReadSourceFromFile function and change to this line 
     size_t src_size = 0;
     std::fstream kernelFile("kernel.cl");
-    std::string content(
-        (std::istreambuf_iterator<char>(kernelFile)),
-        std::istreambuf_iterator<char>()
-    );
+    std::string content((std::istreambuf_iterator<char>(kernelFile)),std::istreambuf_iterator<char>());
     const char* kernelCharArray = new char[content.size()];
     kernelCharArray = content.c_str();
     
@@ -121,13 +127,13 @@ int main()
     {
         fprintf(stderr, "Error: ReadSourceFromFile returned %s.\n", TranslateOpenCLError(err));
     }
-
+    QueryPerformanceCounter(&tot_beginClock);
     //host data
     int* A = NULL;
     int* B = NULL;
     int* result = NULL;
 
-    const int elements = 2048;
+    const int elements = 100000000;
     size_t datasize = sizeof(int) * elements;
 
     A = (int*)malloc(datasize);
@@ -163,6 +169,16 @@ int main()
 
     //get device info
     err = clGetDeviceIDs(platforms[0], CL_DEVICE_TYPE_ALL, numDevices, devices, NULL);
+
+    // print device name
+    {
+        size_t valueSize;
+        clGetDeviceInfo(devices[0], CL_DEVICE_NAME, 0, NULL, &valueSize);
+        char* value = (char*)malloc(valueSize);
+        clGetDeviceInfo(devices[0], CL_DEVICE_NAME, valueSize, value, NULL);
+        printf(" %s\n", value);
+        free(value);
+    }
     
     //create context and connect to device
     cl_context context;
@@ -221,12 +237,14 @@ int main()
     clEnqueueReadBuffer(cmdQueue, bufR, CL_TRUE, 0, datasize, result, 0, NULL, NULL);
 
     //print output
-    for (int i = 0; i < elements; i++)
+    for (long long i = 0; i < elements; i++)
     {
-        printf("%d ", result[i]);
+        //printf("%d ", result[i]);
     }
     printf("\n");
-
+    QueryPerformanceCounter(&tot_endClock);
+    double totalTime = (double)(tot_endClock.QuadPart - tot_beginClock.QuadPart) / tot_clockFreq.QuadPart;
+    printf("Total processing Time : %f ms\n", totalTime * 1000);
     //delete OpenCl resource
     clReleaseKernel(kernel);
     clReleaseProgram(program);
