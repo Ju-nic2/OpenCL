@@ -1,4 +1,4 @@
-# vector Add code 
+# vector Add
 ## introduction
 I made this program to be familiar with openCL (Grammer, function name, .. )   
 This program provides just checking Performance difference with CPU and GPU    
