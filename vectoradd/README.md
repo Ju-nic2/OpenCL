@@ -10,7 +10,7 @@ This program provides just checking Performance difference with CPU and GPU
 3. You can write data size (under MAX INTEGER)
 
 ## Operation 
-Provide vector ADD
+Provide vector ADD.   
 Program made 3 vectors    
 1,2 is operand and fill with just i(0 ~ n-1)
 3 is for result    
