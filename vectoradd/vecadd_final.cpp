@@ -133,7 +133,7 @@ void choiceDevice(cl_device_id device)
         char* name = (char*)malloc(sizeof(char) * size);
         err = clGetPlatformInfo(platforms[i], CL_PLATFORM_NAME, size, name, NULL);
 
-        err = clGetPlatformInfo(platforms[i], CL_PLATFORM_NAME, 0, NULL, &size);
+        err = clGetPlatformInfo(platforms[i], CL_PLATFORM_VENDOR, 0, NULL, &size);
         char* vname = (char*)malloc(sizeof(char) * size);
         err = clGetPlatformInfo(platforms[i], CL_PLATFORM_VENDOR, size, vname, NULL);
         printf("%d. Platform name : %s\n Platform vandor : %s\n",i+1, name, vname);
@@ -175,6 +175,9 @@ void choiceDevice(cl_device_id device)
     scanf("%d", &choice);
     device = devices[choice - 1];
     free(platforms);
+
+
+    //*** plat form1 - device1, plat form2 - device2
 }
 
 void init(cl_context context, cl_command_queue cmdQueue,cl_kernel kernel, cl_device_id device)
