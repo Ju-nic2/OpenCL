@@ -113,33 +113,52 @@ void LogError(const char* str, ...)
     }
 }
 
-//             ** use & operator (to use call by reference)
 void choiceDevice(cl_device_id device)
 {
     cl_device_id* devices = NULL;
     cl_uint err;
+
+    //chose platform
     cl_uint numPlatforms = 0;
     err = clGetPlatformIDs(0, NULL, &numPlatforms);
-    //allocate space for each platform
     cl_platform_id* platforms = NULL;
     platforms = (cl_platform_id*)malloc(numPlatforms * sizeof(cl_platform_id));
-    printf("Choice Device\n");
+    clGetPlatformIDs(numPlatforms, platforms, NULL);
+    int pchoice;
+    printf("Choice Platform\n");
     for (int i = 0; i < numPlatforms; i++)
     {
-        //get platform info
-        err = clGetPlatformIDs(numPlatforms, platforms, NULL);
+        size_t size;
+        err = clGetPlatformInfo(platforms[i], CL_PLATFORM_NAME, 0, NULL, &size);
+        char* name = (char*)malloc(sizeof(char) * size);
+        err = clGetPlatformInfo(platforms[i], CL_PLATFORM_NAME, size, name, NULL);
+
+        err = clGetPlatformInfo(platforms[i], CL_PLATFORM_NAME, 0, NULL, &size);
+        char* vname = (char*)malloc(sizeof(char) * size);
+        err = clGetPlatformInfo(platforms[i], CL_PLATFORM_VENDOR, size, vname, NULL);
+        printf("%d. Platform name : %s\n Platform vandor : %s\n",i+1, name, vname);
+        free(name);
+        free(vname);
+    }
+    printf("Input Platform Num :");
+    scanf("%d", &pchoice);
+    cl_platform_id platform = platforms[pchoice-1];
+
+
+    printf("Choice Device\n");
+
         //get device num
         cl_uint numDevices = 0;
-        err = clGetDeviceIDs(platforms[i], CL_DEVICE_TYPE_ALL, 0, NULL, &numDevices);
+        err = clGetDeviceIDs(platform, CL_DEVICE_TYPE_ALL, 0, NULL, &numDevices);
         //return to main
         //allocate space for each device
         devices = (cl_device_id*)malloc(numDevices * sizeof(cl_device_id));
         //get device info
-        err = clGetDeviceIDs(platforms[i], CL_DEVICE_TYPE_ALL, numDevices, devices, NULL);
+        err = clGetDeviceIDs(platform, CL_DEVICE_TYPE_ALL, numDevices, devices, NULL);
         //0 -> GPU  && 1 ->CPU
         for (int j = 0; j < numDevices; j++)
         {
-            printf("%d. Device Name is", i + 1);
+            printf("%d. Device Name is", j + 1);
             size_t valueSize;
             clGetDeviceInfo(devices[j], CL_DEVICE_NAME, 0, NULL, &valueSize);
             char* value = (char*)malloc(valueSize);
@@ -151,7 +170,6 @@ void choiceDevice(cl_device_id device)
             clGetDeviceInfo(devices[j], CL_DEVICE_MAX_COMPUTE_UNITS, sizeof(unitNum), &unitNum, NULL);
             printf(" Device compute unitNum : %d \n",unitNum);
         }
-    }
     cl_uint choice;
     printf("input Device num : ");
     scanf("%d", &choice);
