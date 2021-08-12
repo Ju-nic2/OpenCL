@@ -37,6 +37,7 @@ cl_program createProgramBinary(cl_context context, cl_device_id device, const ch
 	program = clCreateProgramWithBinary(context, 1, &device, &binarySize, (unsigned char**)&programBinary, &binaryStatus, &err);
 	
 	//** 'build program' makes program complete execution file.**
+	//same with Compiler + Linker
 	err = clBuildProgram(program, 1,&device, "", NULL, NULL);
 	return program;
 }
