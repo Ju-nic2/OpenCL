@@ -169,6 +169,12 @@ void choiceDevice(cl_device_id device)
             cl_uint unitNum;
             clGetDeviceInfo(devices[j], CL_DEVICE_MAX_COMPUTE_UNITS, sizeof(unitNum), &unitNum, NULL);
             printf(" Device compute unitNum : %d \n",unitNum);
+            clGetDeviceInfo(devices[j], CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS, sizeof(unitNum), &unitNum, NULL);
+            printf(" Device max work_item_demension : %d \n", unitNum);
+            clGetDeviceInfo(devices[j], CL_DEVICE_MAX_WORK_GROUP_SIZE, sizeof(unitNum), &unitNum, NULL);
+            printf(" Device max work group size : %d \n", unitNum);
+            clGetDeviceInfo(devices[j], CL_DEVICE_MAX_WORK_ITEM_SIZES, sizeof(unitNum), &unitNum, NULL);
+            printf(" Device max work item size : %d \n", unitNum);
         }
     cl_uint choice;
     printf("input Device num : ");
