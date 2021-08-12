@@ -177,7 +177,8 @@ int main()
         LogError("Error1: %s.\n", TranslateOpenCLError(err));
 
     }
-    /* **kerner name == .cl file's method name**  */
+    /* **kernel name == .cl file's method name**  */
+	//kerenl is a instance of program object
 	cl_kernel kernel = clCreateKernel(program, "simpleMultiply", &err);
 	clReleaseProgram(program);
     if (CL_SUCCESS != err)
