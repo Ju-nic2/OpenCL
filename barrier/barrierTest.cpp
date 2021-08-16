@@ -11,7 +11,7 @@
 #include <Windows.h>
 #include <stdarg.h>
 
-// ¿¡·¯ °¨Áö¿ë
+// Â¿Â¡Â·Â¯ Â°Â¨ÃÃ¶Â¿Ã«
 const char* TranslateOpenCLError(cl_int errorCode)
 {
     switch (errorCode)
