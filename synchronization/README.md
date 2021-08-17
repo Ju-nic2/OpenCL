@@ -1,5 +1,7 @@
 ## NDRange 
 kernel makes kernel instance. and it called work-item.   
+all kernel instances are dispatched in device's PE(process elemens)    
+Ex) GPU can execute 64 work-tiems in one SMID unit using hardware thread.     
 If they are in same control flow it can combine work-group.   
 NDRange is a sapce for kernel instances     
 ### function    
