@@ -9,7 +9,7 @@ if 2 dimension, you must write n*m -> {n,m}.
 local_work_size : 1 work-group size.    
 ** global_work_size % local_work_size == 0 if not, CL_INVALID_WORK_GROUP_SIZE is accured.     
 ## barrier
-In openCL C has barrier() function.     
+openCL C has barrier() function.     
 OpenCl provide global level synchronization. If two work-items are blong to different work-group, it can't be garanted orderly execution.
 It makes work-items'synchronization in same work-group.    
 contol flow must wait, untill all work-items In same work-group arrive barrier.
