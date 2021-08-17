@@ -11,7 +11,7 @@
 #include <Windows.h>
 #include <stdarg.h>
 
-// 에러 감지용
+
 const char* TranslateOpenCLError(cl_int errorCode)
 {
     switch (errorCode)
@@ -119,62 +119,72 @@ int main()
     input = (int*)malloc(sizeof(int) * dataSize);
     intermediate = (int*)malloc(sizeof(int) * dataSize);
     output = (int*)malloc(sizeof(int) * dataSize);
- 
+
     for (int i = 0; i < dataSize; i++)
     {
-        input[i] = 1;
+        input[i] = i;
         intermediate[i] = i;
         output[i] = 1;
 
     }
-	cl_int err;
-	cl_platform_id platform;
-	err = clGetPlatformIDs(1, &platform, NULL);
+    cl_int err;
+    cl_platform_id platform;
+    err = clGetPlatformIDs(1, &platform, NULL);
 
-	cl_device_id device;
-	err = clGetDeviceIDs(platform, CL_DEVICE_TYPE_ALL, 1, &device, NULL);
+    cl_device_id device;
+    err = clGetDeviceIDs(platform, CL_DEVICE_TYPE_ALL, 1, &device, NULL);
 
-	cl_context_properties cps[3] = { CL_CONTEXT_PLATFORM , (cl_context_properties)platform, 0 };
-	cl_context context = clCreateContext(cps, 1, &device, NULL, NULL, &err);
+    cl_context_properties cps[3] = { CL_CONTEXT_PLATFORM , (cl_context_properties)platform, 0 };
+    cl_context context = clCreateContext(cps, 1, &device, NULL, NULL, &err);
 
-	cl_command_queue cmdqueue = clCreateCommandQueue(context, device, 0, &err);
+    cl_command_queue cmdqueue = clCreateCommandQueue(context, device, 0, &err);
 
-	cl_mem input_buffer = clCreateBuffer(context, CL_MEM_READ_ONLY, dataSize* sizeof(int), NULL, &err);
-	cl_mem intermediate_buffer = clCreateBuffer(context, CL_MEM_READ_ONLY, dataSize * sizeof(int), NULL, &err);
-	cl_mem output_buffer = clCreateBuffer(context, CL_MEM_WRITE_ONLY, dataSize * sizeof(int), NULL, &err);
+    cl_mem input_buffer = clCreateBuffer(context, CL_MEM_READ_ONLY, dataSize * sizeof(int), NULL, &err);
+    cl_mem intermediate_buffer = clCreateBuffer(context, CL_MEM_READ_ONLY, dataSize * sizeof(int), NULL, &err);
+    cl_mem output_buffer = clCreateBuffer(context, CL_MEM_WRITE_ONLY, dataSize * sizeof(int), NULL, &err);
 
-	err = clEnqueueWriteBuffer(cmdqueue, input_buffer, CL_TRUE, 0, dataSize * sizeof(int), (void*)input, 0, NULL, NULL);
+    err = clEnqueueWriteBuffer(cmdqueue, input_buffer, CL_TRUE, 0, dataSize * sizeof(int), (void*)input, 0, NULL, NULL);
 
-	size_t src_size = 0;
-	std::fstream kernelFile("barrier.cl");
-	std::string content((std::istreambuf_iterator<char>(kernelFile)), std::istreambuf_iterator<char>());
-	const char* kernelCharArray = new char[content.size()];
-	kernelCharArray = content.c_str();
+    size_t src_size = 0;
+    std::fstream kernelFile("barrier.cl");
+    std::string content((std::istreambuf_iterator<char>(kernelFile)), std::istreambuf_iterator<char>());
+    const char* kernelCharArray = new char[content.size()];
+    kernelCharArray = content.c_str();
 
-	cl_program program = clCreateProgramWithSource(context, 1, (const char**)&kernelCharArray, NULL, &err);
+    cl_program program = clCreateProgramWithSource(context, 1, (const char**)&kernelCharArray, NULL, &err);
     err = clBuildProgram(program, 1, &device, "", NULL, NULL);
-	cl_kernel kernel = clCreateKernel(program, "simple", &err);
-	clReleaseProgram(program);
-  
+    cl_kernel kernel = clCreateKernel(program, "simple", &err);
+    clReleaseProgram(program);
 
-	err = clSetKernelArg(kernel, 0, sizeof(cl_mem), &input_buffer);
-	err = clSetKernelArg(kernel, 1, sizeof(cl_mem), &intermediate_buffer);
-	err = clSetKernelArg(kernel, 2,10* sizeof(cl_int),0);
-	
 
-	size_t globalws[1] = {2};
-	size_t localws[1] = {10};
-	err = clEnqueueNDRangeKernel(cmdqueue, kernel, 1, NULL, globalws, localws, 0, NULL, NULL);
+    err = clSetKernelArg(kernel, 0, sizeof(cl_mem), &input_buffer);
+    err = clSetKernelArg(kernel, 1, sizeof(cl_mem), &intermediate_buffer);
+
+    //what's different setKernelArg vs clEnqueueNDRangeKernel
+    err = clSetKernelArg(kernel, 2, 2 * sizeof(cl_int), 0);
+   
+    //Change the numbers. 
+    size_t globalws[1] = { 10 };
+    size_t localws[1] = {2};
+
+    err = clEnqueueNDRangeKernel(cmdqueue, kernel, 1, NULL, globalws, localws, 0, NULL, NULL);
+    err = clEnqueueReadBuffer(cmdqueue, intermediate_buffer, CL_TRUE, 0, dataSize * sizeof(int), intermediate, 0, NULL, NULL);
+
+    for (int i = 0; i < dataSize; i++)
+    {
+        printf("%d ", intermediate[i]);
+    }
+
     err = clSetKernelArg(kernel, 0, sizeof(cl_mem), &input_buffer);
     err = clSetKernelArg(kernel, 1, sizeof(cl_mem), &output_buffer);
     err = clEnqueueNDRangeKernel(cmdqueue, kernel, 1, NULL, globalws, localws, 0, NULL, NULL);
 
-	err = clEnqueueReadBuffer(cmdqueue, output_buffer, CL_TRUE, 0, dataSize * sizeof(int), output, 0, NULL, NULL);
+    err = clEnqueueReadBuffer(cmdqueue, output_buffer, CL_TRUE, 0, dataSize * sizeof(int), output, 0, NULL, NULL);
 
-	for (int i = 0; i < dataSize; i++)
-	{
+    for (int i = 0; i < 2; i++)
+    {
         printf("%d ", output[i]);
-	}
-	system("pause");
+    }
+    system("pause");
 
 }
