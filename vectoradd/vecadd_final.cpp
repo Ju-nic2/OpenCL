@@ -113,7 +113,7 @@ void LogError(const char* str, ...)
     }
 }
 
-void choiceDevice(cl_device_id device)
+void choiceDevice(cl_device_id &device)
 {
     cl_device_id* devices = NULL;
     cl_uint err;
@@ -186,12 +186,12 @@ void choiceDevice(cl_device_id device)
     //*** plat form1 - device1, plat form2 - device2
 }
 
-void init(cl_context context, cl_command_queue cmdQueue,cl_kernel kernel, cl_device_id device)
+void init(cl_context& context, cl_command_queue& cmdQueue,cl_kernel &kernel, cl_device_id device)
 {
     cl_int err;
     //create context and connect to device
     context = clCreateContext(NULL, 1, &device, NULL, NULL, &err);
-
+    printf("12%s\n", TranslateOpenCLError(err));
     //create command queue and connect to device
     cmdQueue = clCreateCommandQueue(context, device, 0, &err);
 
@@ -205,11 +205,13 @@ void init(cl_context context, cl_command_queue cmdQueue,cl_kernel kernel, cl_dev
 
     //create program
     cl_program program = clCreateProgramWithSource(context, 1, (const char**)&kernelCharArray, NULL, &err);
-
+    printf("5%s\n", TranslateOpenCLError(err));
     //compile program for device
     err = clBuildProgram(program, 1, &device, "", NULL, NULL);
+    printf("4%s\n", TranslateOpenCLError(err));
     //create vector add kernel
     kernel = clCreateKernel(program, "vecadd", &err);
+   
     clReleaseProgram(program);
 }
 
@@ -225,6 +227,7 @@ void setBuffer(cl_context context, cl_command_queue cmdQueue, size_t datasize)
     //write array  to Buffer
     err = clEnqueueWriteBuffer(cmdQueue, bufA, CL_FALSE, 0, datasize, A, 0, NULL, NULL);
     err = clEnqueueWriteBuffer(cmdQueue, bufB, CL_FALSE, 0, datasize, B, 0, NULL, NULL);
+    printf("2%s\n", TranslateOpenCLError(err));
 }
 
 void initData(int elements, size_t datasize)
@@ -252,13 +255,16 @@ void runKernel(cl_command_queue cmdQueue, cl_kernel kernel, int elements, size_t
     err = clSetKernelArg(kernel, 2, sizeof(cl_mem), &bufR);
 
     //for excecute , define NDRange Index size (global work size)
-    size_t globalWorkSize[1];
-    globalWorkSize[0] = elements;
+    size_t globalWorkSize[1] = { elements };
+
+    //MUST global_size % local_size == 0 
+   // size_t local[1] = { 2 };
 
     err = clEnqueueNDRangeKernel(cmdQueue, kernel, 1, NULL, globalWorkSize, NULL, 0, NULL, NULL);
+    printf("1%s\n", TranslateOpenCLError(err));
 
     //read data from device output buffer to host output buffer
-    clEnqueueReadBuffer(cmdQueue, bufR, CL_TRUE, 0, datasize, result, 0, NULL, NULL);
+    clEnqueueReadBuffer(cmdQueue, bufR, CL_TRUE, 0, elements, result, 0, NULL, NULL);
 
     //print output
     for (long long i = 0; i < elements; i++)
@@ -312,17 +318,7 @@ int main()
 
 
     //delete OpenCl resource
-    clReleaseKernel(kernel);
-    clReleaseCommandQueue(cmdQueue);
-    clReleaseMemObject(bufA);
-    clReleaseMemObject(bufB);
-    clReleaseMemObject(bufR);
-    clReleaseContext(context);
-    //delete Host resource
-    free(A);
-    free(B);
-    free(result);
-    free(device);
+   
     return 0;
 }
 
