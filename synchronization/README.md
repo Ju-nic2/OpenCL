@@ -11,6 +11,9 @@ operate on process elements
 Work-Group is group of work-items    
 It same with CUDA Thread Block    
 operate on Compute units     
+You can understand more easily, if you think associated with cpu programing   
+work-item - process(fork) , work-group(process group)    
+This concept is not matched perfectrly, just description.     
 ### Function    
 clEnqueueNDRangeKernel() has many parameters. some of them  global_work_size,local_work_size    
 global_work_size : Total Size Of NDRange's line. if 1 dimension, it meas l line size.
