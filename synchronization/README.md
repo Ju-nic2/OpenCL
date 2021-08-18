@@ -26,11 +26,12 @@ contol flow must wait, untill all work-items In same work-group arrive barrier.
 ### Buffer,KernelArg
 Buffer is allocated space in device.    
 Kernel Arg is specific location of space    
-__private -> is for only one work-item(thread),Process Element
-__local -> is for work-group(block), Compute Unit
-__constance -> is for device, maybe share all compute unit     
+
+### kernel Arg identifiers 
+__private -> is for only one work-item(thread),Process Element       
+__local -> is for work-group(block), Compute Unit     
+__constance -> is for device, maybe share all compute unit      
 __global -> is for device and more far than constance location.     
-
-
+access speed p<l<c<g
 
 
