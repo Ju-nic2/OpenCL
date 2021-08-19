@@ -215,7 +215,7 @@ void init(cl_context& context, cl_command_queue& cmdQueue,cl_kernel &kernel, cl_
     clReleaseProgram(program);
 }
 
-void setBuffer(cl_context context, cl_command_queue cmdQueue, size_t datasize)
+void setBuffer(cl_context& context, cl_command_queue& cmdQueue, size_t datasize)
 {
     cl_int err;
 
@@ -223,7 +223,7 @@ void setBuffer(cl_context context, cl_command_queue cmdQueue, size_t datasize)
     bufA = clCreateBuffer(context, CL_MEM_READ_ONLY, datasize, NULL, &err);
     bufB = clCreateBuffer(context, CL_MEM_READ_ONLY, datasize, NULL, &err);
     bufR = clCreateBuffer(context, CL_MEM_WRITE_ONLY, datasize, NULL, &err);
-
+    printf("9%s\n", TranslateOpenCLError(err));
     //write array  to Buffer
     err = clEnqueueWriteBuffer(cmdQueue, bufA, CL_FALSE, 0, datasize, A, 0, NULL, NULL);
     err = clEnqueueWriteBuffer(cmdQueue, bufB, CL_FALSE, 0, datasize, B, 0, NULL, NULL);
@@ -245,7 +245,7 @@ void initData(int elements, size_t datasize)
     }
 }
 
-void runKernel(cl_command_queue cmdQueue, cl_kernel kernel, int elements, size_t datasize)
+void runKernel(cl_command_queue& cmdQueue, cl_kernel& kernel, int elements, size_t datasize)
 {
 
     cl_int err;
@@ -256,20 +256,18 @@ void runKernel(cl_command_queue cmdQueue, cl_kernel kernel, int elements, size_t
 
     //for excecute , define NDRange Index size (global work size)
     size_t globalWorkSize[1] = { elements };
+    size_t local[1] = { elements/4 };
 
-    //MUST global_size % local_size == 0 
-   // size_t local[1] = { 2 };
-
-    err = clEnqueueNDRangeKernel(cmdQueue, kernel, 1, NULL, globalWorkSize, NULL, 0, NULL, NULL);
+    err = clEnqueueNDRangeKernel(cmdQueue, kernel, 1, NULL, globalWorkSize, local, 0, NULL, NULL);
     printf("1%s\n", TranslateOpenCLError(err));
 
     //read data from device output buffer to host output buffer
-    clEnqueueReadBuffer(cmdQueue, bufR, CL_TRUE, 0, elements, result, 0, NULL, NULL);
-
+    err = clEnqueueReadBuffer(cmdQueue, bufR, CL_TRUE, 0, datasize, result, 0, NULL, NULL);
+    printf("%s\n", TranslateOpenCLError(err));
     //print output
     for (long long i = 0; i < elements; i++)
     {
-        //printf("%d ", result[i]);
+       printf("%d ", result[i]);
     }
 }
 
@@ -318,7 +316,17 @@ int main()
 
 
     //delete OpenCl resource
-   
+    clReleaseKernel(kernel);
+    clReleaseCommandQueue(cmdQueue);
+    clReleaseMemObject(bufA);
+    clReleaseMemObject(bufB);
+    clReleaseMemObject(bufR);
+    clReleaseContext(context);
+    //delete Host resource
+    free(A);
+    free(B);
+    free(result);
+    //free(device);
     return 0;
 }
 
