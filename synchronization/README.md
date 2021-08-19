@@ -46,6 +46,8 @@ contol flow must wait, untill all work-items In same work-group arrive barrier.
 ### Buffer,KernelArg
 Buffer is allocated space in device.    
 Kernel Arg is specific location of space    
+** CL_TRUE : this parameter block kernel operation untill all data is ready.
+** CL_FALSE : this parameter nonblock kernel operation.
 
 ### kernel Arg identifiers 
 __private -> is for only one work-item(thread),Process Element       
