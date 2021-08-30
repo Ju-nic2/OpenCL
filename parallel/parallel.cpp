@@ -5,13 +5,51 @@
 #include <string>
 #include <fstream>
 #include <random>
-
+#include <immintrin.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <Windows.h>
+#include <windows.h>
 #include <stdarg.h>
+#include "utils.h"
 
 
+#if defined(_WIN32)
+#include <windows.h>
+typedef LARGE_INTEGER simpleTime;
+
+void simpleGetTime(simpleTime* timestamp)
+{
+    QueryPerformanceCounter(timestamp);
+}
+
+double simpleTimeDiffMsec(simpleTime tfinish, simpleTime tstart)
+{
+    static LARGE_INTEGER tFreq = { 0 };
+
+    if (!tFreq.QuadPart) QueryPerformanceFrequency(&tFreq);
+
+    double freq = (double)tFreq.QuadPart;
+    return 1000.0 * ((double)tfinish.QuadPart - (double)tstart.QuadPart) / freq;
+}
+
+float half_to_float(unsigned short in)
+{
+    int tmp[4] = { in,0,0,0 };
+    __m128 out = _mm_cvtph_ps(*((__m128i*)tmp));
+
+    return ((float*)&out)[0];
+}
+
+unsigned short float_to_half(float in)
+{
+
+    float tmp[4] = { in,0,0,0 };
+    __m128i out = _mm_cvtps_ph(*((__m128*)tmp), 0);
+
+    return ((unsigned short*)&out)[0];
+}
+#endif   // _WIN32
 const char* TranslateOpenCLError(cl_int errorCode)
 {
     switch (errorCode)
@@ -187,10 +225,20 @@ void runKernel(int flag)
         //Change the numbers. 
         size_t globalws[1] = { 256 };
         size_t localws[1] = { 1 };
-        err = clEnqueueNDRangeKernel(cmdqueue, kernel, 1, NULL, globalws, localws, 0, NULL, NULL);
-        printf("1%s\n", TranslateOpenCLError(err));
+
+       
+        simpleTime tStart, tEnd;
+        simpleGetTime(&tStart);
+        for (int i = 0; i < 1000; i++) {
+            err = clEnqueueNDRangeKernel(cmdqueue, kernel, 1, NULL, globalws, localws, 0, NULL, NULL);
+           
+        }
+        clFinish(cmdqueue);
+        simpleGetTime(&tEnd);
+        const double cpu_msec = simpleTimeDiffMsec(tEnd, tStart);
+        printf("Data paralle Time : %f\n", cpu_msec);
         err = clEnqueueReadBuffer(cmdqueue, output_buffer, CL_TRUE, 0, dataSize * sizeof(float), des, 0, NULL, NULL);
-        printf("1%s\n", TranslateOpenCLError(err));
+     
     }
     else
     {
@@ -199,23 +247,29 @@ void runKernel(int flag)
         kernel[1] = clCreateKernel(program, "datasub", &err);
         kernel[2] = clCreateKernel(program, "datadiv", &err);
         kernel[3] = clCreateKernel(program, "datamul", &err);
-        printf("1%s\n", TranslateOpenCLError(err));
-
         for (int i = 0; i < 4; i++)
         {
             err = clSetKernelArg(kernel[i], 0, sizeof(cl_mem), &input_buffer1);
             err = clSetKernelArg(kernel[i], 1, sizeof(cl_mem), &input_buffer2);
-            err = clSetKernelArg(kernel[i], 2, sizeof(cl_mem), &output_buffer);
-            printf("1%s\n", TranslateOpenCLError(err));
+            err = clSetKernelArg(kernel[i], 2, sizeof(cl_mem), &output_buffer);        
         }
-        for (int i = 0; i < 4; i++)
-        {
-            err = clEnqueueTask(cmdqueue, kernel[i], 0, NULL, NULL);
-            printf("1%s\n", TranslateOpenCLError(err));
+        simpleTime tStart, tEnd;
+        simpleGetTime(&tStart);
+        for (int i = 0; i < 1000; i++) {
+            for (int i = 0; i < 4; i++)
+            {
+                err = clEnqueueTask(cmdqueue, kernel[i], 0, NULL, NULL);
+               
+            }
         }
+        clFinish(cmdqueue);
+        simpleGetTime(&tEnd);
+        const double cpu_msec = simpleTimeDiffMsec(tEnd, tStart);
+        printf("Task paralle Time : %f\n", cpu_msec);
         err = clEnqueueReadBuffer(cmdqueue, output_buffer, CL_TRUE, 0, dataSize * sizeof(float), des, 0, NULL, NULL);
     }
 }
+
 int main()
 {
 
@@ -231,6 +285,9 @@ int main()
     
     init();
     runKernel(DATA);
+  
+    init();
+    runKernel(TASK);
 
     
 
@@ -239,9 +296,9 @@ int main()
     {
         for (int j = 0; j < 4; j++)
         {
-            printf("%.2f ",des[i * 4 + j]);
+            //printf("%.2f ",des[i * 4 + j]);
         }
-        printf("\n");
+        //printf("\n");
     }
 
   
