@@ -6,8 +6,8 @@ This folder is for Testing Optimized Open CL code
 
 ## Time efficiency per compute unit (Data parallel)
 use  1 compute unit -> 100   
-use  2 compute unit -> 98    
-use  4 compute unit -> 90    
-use 24 compute unit -> 1    
+use  2 compute unit -> 85    
+use  4 compute unit -> 75    
+use 16 compute unit -> 72    
    
    
