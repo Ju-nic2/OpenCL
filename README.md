@@ -12,7 +12,7 @@ operate on process elements
 ### Work-Group
 Work-Group is group of work-items    
 It same with CUDA Thread Block    
-**operate on Compute units **
+operate on Compute units
 You can maximize parallel processing if use all compute unit.
   
 ### Function    
