@@ -155,8 +155,8 @@ static cl_context context = NULL;
 
 static cl_command_queue cmdqueue = NULL;
 static cl_platform_id platform = NULL;
-
-cl_uint dataSize = 256 * 4;
+int row = 256;
+cl_uint dataSize = row * 4;
 
 float* input1 = (float*)malloc(sizeof(float) * dataSize);
 float* input2 = (float*)malloc(sizeof(float) * dataSize);
@@ -166,12 +166,27 @@ cl_mem input_buffer1 = NULL;
 cl_mem input_buffer2 = NULL;
 cl_mem output_buffer = NULL;
 
+
 void init()
 {
     cl_int err;
-    err = clGetPlatformIDs(1, &platform, NULL);
 
-    err = clGetDeviceIDs(platform, CL_DEVICE_TYPE_ALL, 1, &device, NULL);
+    cl_uint numPlatforms = 0;
+    err = clGetPlatformIDs(0, NULL, &numPlatforms);
+    cl_platform_id* platforms = NULL;
+    platforms = (cl_platform_id*)malloc(numPlatforms * sizeof(cl_platform_id));
+    clGetPlatformIDs(numPlatforms, platforms, NULL);
+    cl_platform_id platform = platforms[0];
+
+    cl_device_id* devices = NULL;
+    cl_uint numDevices = 0;
+    err = clGetDeviceIDs(platform, CL_DEVICE_TYPE_ALL, 0, NULL, &numDevices);
+    devices = (cl_device_id*)malloc(numDevices * sizeof(cl_device_id));
+    err = clGetDeviceIDs(platform, CL_DEVICE_TYPE_ALL, numDevices, devices, NULL);
+
+
+    //device 0 is GPU, 1 is CPU
+    device = devices[0];
     cl_context_properties cps[3] = { CL_CONTEXT_PLATFORM , (cl_context_properties)platform, 0 };
     context = clCreateContext(cps, 1, &device, NULL, NULL, &err);
     cmdqueue = clCreateCommandQueue(context, device, 0, &err);
@@ -212,7 +227,7 @@ cl_program getProgram(int flag)
  
 }
 
-void runKernel(int flag)
+void runKernel(int flag,int row)
 {
     cl_int err;
     cl_program program = getProgram(flag);
@@ -223,13 +238,15 @@ void runKernel(int flag)
         err = clSetKernelArg(kernel, 2, sizeof(cl_mem), &output_buffer);
 
         //Change the numbers. 
-        size_t globalws[1] = { 256 };
-        size_t localws[1] = { 1 };
+        size_t globalws[1] = {row};
+
+        //Set compute unit num 
+        size_t localws[1] = {1};
 
        
         simpleTime tStart, tEnd;
         simpleGetTime(&tStart);
-        for (int i = 0; i < 1000; i++) {
+        for (int i = 0; i < 10000; i++) {
             err = clEnqueueNDRangeKernel(cmdqueue, kernel, 1, NULL, globalws, localws, 0, NULL, NULL);
            
         }
@@ -255,7 +272,7 @@ void runKernel(int flag)
         }
         simpleTime tStart, tEnd;
         simpleGetTime(&tStart);
-        for (int i = 0; i < 1000; i++) {
+        for (int i = 0; i < 10000; i++) {
             for (int i = 0; i < 4; i++)
             {
                 err = clEnqueueTask(cmdqueue, kernel[i], 0, NULL, NULL);
@@ -272,8 +289,7 @@ void runKernel(int flag)
 
 int main()
 {
-
-    for (int i = 0; i < 256; i++)
+    for (int i = 0; i < row; i++)
     {
         for (int j = 0; j < 4; j++)
         {
@@ -284,19 +300,28 @@ int main()
     }
     
     init();
-    runKernel(DATA);
-  
+    runKernel(DATA,row);
+    clReleaseMemObject(input_buffer1);
+    clReleaseMemObject(input_buffer2);
+    clReleaseMemObject(output_buffer);
+    clReleaseCommandQueue(cmdqueue);
+    clReleaseContext(context);
+   
     init();
-    runKernel(TASK);
+    runKernel(TASK,row);
 
     
+    clReleaseMemObject(input_buffer1);
+    clReleaseMemObject(input_buffer2);
+    clReleaseMemObject(output_buffer);
+    clReleaseCommandQueue(cmdqueue);
+    clReleaseContext(context);
 
-
-    for (int i = 0; i < 256; i++)
+    for (int i = 0; i < row; i++)
     {
         for (int j = 0; j < 4; j++)
         {
-            //printf("%.2f ",des[i * 4 + j]);
+            //printf("%.2f ", des[i * 4 + j]);
         }
         //printf("\n");
     }
