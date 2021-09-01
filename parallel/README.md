@@ -12,4 +12,9 @@ use  2 compute unit -> 85
 use  4 compute unit -> 75    
 use 16 compute unit -> 72    
    
+## Optimize with vector data vs nomal data
+preparing
+
+## Optimize with data caching(use local memory)
+preparing
    
