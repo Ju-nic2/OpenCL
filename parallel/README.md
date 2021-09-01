@@ -6,6 +6,7 @@ Data set : 256*4
 ** In CPU -> Task =< Data (almost same)    
 
 ## Time efficiency per compute unit (Data parallel)
+**seting : set work_group_size == 256 / compute unit num
 use  1 compute unit -> 100   
 use  2 compute unit -> 85    
 use  4 compute unit -> 75    
