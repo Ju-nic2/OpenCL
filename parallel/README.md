@@ -14,9 +14,6 @@ use  1 compute unit -> 100
 use  2 compute unit -> 85    
 use  4 compute unit -> 75    
 use 16 compute unit -> 72    
-   
-## Optimize with vector data vs nomal data
-preparing
 
 # OptimizeTest.cpp + cellMatrix.cl
 I use last semester's code (in Linux System Programing repository)    
@@ -32,3 +29,10 @@ So this program use all compute unit.
 So, Optimized kernel is faster than nomal kernerl.    
 But Its difference is not noticeably large.    
 
+
+## CPU vs GPU
+preparing...   
+
+   
+## Optimize with vector data vs nomal data
+preparing...   
