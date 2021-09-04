@@ -5,7 +5,7 @@ This folder is for Testing Optimized Open CL code
 Data set : 256*4   
 
 ## Task vs Data 
-** In GPU -> Task <<< Data (Approximately 100x faster use all compute unit)   
+** In GPU -> Task <<< Data (Approximately 10x faster use all compute unit)   
 ** In CPU -> Task =< Data (almost same)    
 
 ## Time efficiency per compute unit (Data parallel)
