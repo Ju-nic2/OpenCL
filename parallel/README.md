@@ -26,7 +26,7 @@ Input Data : 8192*8192 Matrix
 I made work-group that's size is 16*16 (same with max work-item size 256)     
 So this program use all compute unit.    
 ### Conclusion
-1 iteration -> 88ms vs 77 ms
+1 iteration -> 88ms vs 77 ms      
 100 iteration -> 4000ms vs 3800 ms     
 
 So, Optimized kernel is faster than nomal kernerl.    
