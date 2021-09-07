@@ -149,6 +149,7 @@ void LogError(const char* str, ...)
 
 #define NONO 0
 #define OPTI 1
+#define CPUK 2
 
 #define MATRIX_X 8192
 #define MATRIX_Y 8192
@@ -172,7 +173,7 @@ cl_mem output_buffer = NULL;
 
 
 
-void init()
+void initGPU()
 {
     cl_int err;
 
@@ -182,6 +183,39 @@ void init()
     platforms = (cl_platform_id*)malloc(numPlatforms * sizeof(cl_platform_id));
     clGetPlatformIDs(numPlatforms, platforms, NULL);
     cl_platform_id platform = platforms[0];
+
+    cl_device_id* devices = NULL;
+    cl_uint numDevices = 0;
+    err = clGetDeviceIDs(platform, CL_DEVICE_TYPE_ALL, 0, NULL, &numDevices);
+    devices = (cl_device_id*)malloc(numDevices * sizeof(cl_device_id));
+    err = clGetDeviceIDs(platform, CL_DEVICE_TYPE_ALL, numDevices, devices, NULL);
+
+
+    //device 0 is GPU, 1 is CPU
+    device = devices[0];
+    cl_context_properties cps[3] = { CL_CONTEXT_PLATFORM , (cl_context_properties)platform, 0 };
+    context = clCreateContext(cps, 1, &device, NULL, NULL, &err);
+    cmdqueue = clCreateCommandQueue(context, device, 0, &err);
+
+    input_buffer1 = clCreateBuffer(context, CL_MEM_READ_ONLY, dataSize * sizeof(float), NULL, &err);
+    local_buffer = clCreateBuffer(context, CL_MEM_READ_WRITE, cachSzie * sizeof(float), NULL, &err);
+    output_buffer = clCreateBuffer(context, CL_MEM_WRITE_ONLY, dataSize * sizeof(float), NULL, &err);
+
+    err = clEnqueueWriteBuffer(cmdqueue, input_buffer1, CL_TRUE, 0, dataSize * sizeof(float), (void*)input1, 0, NULL, NULL);
+    err = clEnqueueWriteBuffer(cmdqueue, local_buffer, CL_TRUE, 0, cachSzie * sizeof(float), (void*)local, 0, NULL, NULL);
+
+
+}
+void initCPU()
+{
+    cl_int err;
+
+    cl_uint numPlatforms = 0;
+    err = clGetPlatformIDs(0, NULL, &numPlatforms);
+    cl_platform_id* platforms = NULL;
+    platforms = (cl_platform_id*)malloc(numPlatforms * sizeof(cl_platform_id));
+    clGetPlatformIDs(numPlatforms, platforms, NULL);
+    cl_platform_id platform = platforms[1];
 
     cl_device_id* devices = NULL;
     cl_uint numDevices = 0;
@@ -218,8 +252,6 @@ cl_program getProgram(int flag)
     err = clBuildProgram(program, 1, &device, "", NULL, NULL);
     return program;
 
-   
-
 
 }
 
@@ -234,14 +266,15 @@ void runKernel(int flag)
 
         //Change the numbers. 
         size_t globalws[2] = { MATRIX_X, MATRIX_Y };
-        size_t localws[2] = {16,16};
+        // 
+        size_t localws[2] = { 16, 16 };
 
 
         simpleTime tStart, tEnd;
         simpleGetTime(&tStart);
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < 1; i++) {
             err = clEnqueueNDRangeKernel(cmdqueue, kernel, 2, NULL, globalws, localws, 0, NULL, NULL);
-            //printf("%s\n", TranslateOpenCLError(err));
+            printf("%s\n", TranslateOpenCLError(err));
 
         }
         clFinish(cmdqueue);
@@ -251,7 +284,7 @@ void runKernel(int flag)
         err = clEnqueueReadBuffer(cmdqueue, output_buffer, CL_TRUE, 0, dataSize * sizeof(float), des, 0, NULL, NULL);
 
     }
-    else
+    else if(flag == OPTI)
     {
         cl_kernel kernel = clCreateKernel(program, "useCaching", &err);
         err = clSetKernelArg(kernel, 0, sizeof(cl_mem), &input_buffer1);
@@ -263,14 +296,38 @@ void runKernel(int flag)
 
         simpleTime tStart, tEnd;
         simpleGetTime(&tStart);
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < 1; i++) {
             err = clEnqueueNDRangeKernel(cmdqueue, kernel, 2, NULL, globalws, localws, 0, NULL, NULL);
-            //printf("%s\n", TranslateOpenCLError(err));
+            printf("%s\n", TranslateOpenCLError(err));
         }
         clFinish(cmdqueue);
         simpleGetTime(&tEnd);
         const double cpu_msec = simpleTimeDiffMsec(tEnd, tStart);
         printf("Optimization with Data Caching time : %f\n", cpu_msec);
+        err = clEnqueueReadBuffer(cmdqueue, output_buffer, CL_TRUE, 0, dataSize * sizeof(float), des, 0, NULL, NULL);
+    }
+    else if (flag == CPUK)
+    {
+        cl_kernel kernel = clCreateKernel(program, "Unoptimized", &err);
+        err = clSetKernelArg(kernel, 0, sizeof(cl_mem), &input_buffer1);
+        err = clSetKernelArg(kernel, 1, sizeof(cl_mem), &output_buffer);
+
+        //Change the numbers. 
+        size_t globalws[2] = { MATRIX_X, MATRIX_Y };
+        //size_t localws[2] = { 1, 1 };
+
+
+        simpleTime tStart, tEnd;
+        simpleGetTime(&tStart);
+        for (int i = 0; i < 1; i++) {
+            err = clEnqueueNDRangeKernel(cmdqueue, kernel, 2, NULL, globalws, NULL, 0, NULL, NULL);
+            printf("%s\n", TranslateOpenCLError(err));
+
+        }
+        clFinish(cmdqueue);
+        simpleGetTime(&tEnd);
+        const double cpu_msec = simpleTimeDiffMsec(tEnd, tStart);
+        printf("UnOptimized time : %f\n", cpu_msec);
         err = clEnqueueReadBuffer(cmdqueue, output_buffer, CL_TRUE, 0, dataSize * sizeof(float), des, 0, NULL, NULL);
     }
 }
@@ -287,7 +344,7 @@ int main()
         }
     }
    
-    init();
+    initGPU();
     runKernel(NONO);
     clReleaseMemObject(input_buffer1);
     //clReleaseMemObject(input_buffer2);
@@ -303,16 +360,23 @@ int main()
         }
         //printf("\n");
     }
-    init();
+    initGPU();
     runKernel(OPTI);
+    clReleaseMemObject(input_buffer1);
+    //clReleaseMemObject(input_buffer2);
+    clReleaseMemObject(output_buffer);
+    clReleaseCommandQueue(cmdqueue);
+    clReleaseContext(context);
 
+    initCPU();
+    runKernel(CPUK);
     for (int i = 0; i < MATRIX_X; i++)
     {
         for (int j = 0; j < MATRIX_Y; j++)
         {
             //printf("%.2f ", des[i * MATRIX_Y + j]);
         }
-       // printf("\n");
+       //printf("\n");
     }
     clReleaseMemObject(input_buffer1);
    // clReleaseMemObject(input_buffer2);
