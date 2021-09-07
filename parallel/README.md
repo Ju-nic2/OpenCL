@@ -39,8 +39,8 @@ But Its difference is not noticeably large.
 
 
 ## CPU vs GPU
-preparing...   
-
+This is meaningless. Because My PC''s CPU GPU performance gap is very large.     
+When i check this, Always CPU is faster than GPU
    
 ## Optimize with vector data vs nomal data
 preparing...   
