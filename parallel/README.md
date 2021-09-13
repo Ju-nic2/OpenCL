@@ -42,5 +42,9 @@ But Its difference is not noticeably large.
 This is meaningless. Because My PC's CPU GPU performance gap is very large.     
 When i check this, Always CPU is faster than GPU    
    
+## Memory copy problem 
+In this program , Moving data between CPU and GPU is longer than kernel working.   
+It's biger than Optimization with local memory. So, Proper memory use is necessary.    
+
 ## Optimize with vector data vs nomal data
 preparing...   
